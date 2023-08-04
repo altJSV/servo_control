@@ -6,6 +6,7 @@
 #define ssid  "ssid" //точка доступа wifi
 #define password  "pass" //пароль wifi
 #define AMOUNT 4 //количество сервоприводов
+#define MAXANGLE 90 //максимальный угол поворота
 #define MSG_BUFFER_SIZE (50) //размер буфера для сообщений mqtt
 
 ServoSmooth servos[AMOUNT]; // инициализируем библиотеку
@@ -35,22 +36,19 @@ String webPage = "";
 //Функция чтения и обработки сообщений из топика
 void callback(char* topic, byte* payload, unsigned int length) 
 {
+ String message; //для хранения сообщения топика
+ uint8_t param1, param2; //параметры серво
  Serial.print("Message arrived [");
  Serial.print(topic);
  Serial.print("] ");
  for (int i = 0; i < length; i++) {
- Serial.print((char)payload[i]);
+ message = message+(char)payload[i];
  }
- Serial.println();
+ Serial.println(message);//общий вид сообщения "НомерСерво Угол"
 
- // Switch on the LED if an 1 was received as first character
- if ((char)payload[0] == '1') {
- digitalWrite(BUILTIN_LED, LOW); // Turn the LED on (Note that LOW is the voltage level
- // but actually the LED is on; this is because
- // it is active low on the ESP-01)
- } else {
- digitalWrite(BUILTIN_LED, HIGH); // Turn the LED off by making the voltage HIGH
- }
+ param1=message.substring(0,1).toInt();//Номер привода
+ param2=message.substring(2).toInt();//угол поворота
+ move_servo (param1, param2);
 }
 
 //функция переподключения к mqtt
@@ -66,9 +64,9 @@ void callback(char* topic, byte* payload, unsigned int length)
  if (client.connect(clientId.c_str(),mqtt_login,mqtt_pass)) {
  Serial.println("connected");
  // Как только подключились пишем в топик, что все хорошо
- client.publish("outTopic", "hello world");
+ client.publish("StatusTopic", "Device Started");
  // и подписываемся на топик управляющих команд
- client.subscribe("inTopic");
+ client.subscribe("CmdTopic");
  } else {
  Serial.print("failed, rc=");
  Serial.print(client.state());
@@ -82,7 +80,16 @@ void callback(char* topic, byte* payload, unsigned int length)
 //Функция движения серво
 void move_servo (int num, int deg)
 {
-  servos[num].setTargetDeg(deg);  
+  if (num<AMOUNT && deg<=MAXANGLE && deg>=0) //проверка корректности полученных значений
+  {
+  servos[num].setTargetDeg(deg);
+  }
+  else
+  {
+    Serial.print("Incorrect values");
+    Serial.println(num);
+    Serial.println(deg);
+  }  
 }
 
 void setup() {
@@ -132,9 +139,13 @@ void setup() {
 
   //подключаем серво
   servos[0].attach(3);
+  servos[0].smoothStart();
   servos[1].attach(4);
+  servos[1].smoothStart();
   servos[2].attach(5);
+  servos[2].smoothStart();
   servos[3].attach(6);
+  servos[3].smoothStart();
 
   //Настройки скорости и ускорений для каждого из серво
   for (byte i = 0; i < AMOUNT; i++) {
