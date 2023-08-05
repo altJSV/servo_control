@@ -5,7 +5,7 @@
 //Логин- пароль wifi
 #define ssid  "ssid" //точка доступа wifi
 #define password  "pass" //пароль wifi
-#define AMOUNT 4 //количество сервоприводов
+#define AMOUNT 2 //количество сервоприводов
 #define MAXANGLE 90 //максимальный угол поворота
 #define MSG_BUFFER_SIZE (50) //размер буфера для сообщений mqtt
 
@@ -31,7 +31,7 @@ unsigned long lastMsg = 0;
 char msg[MSG_BUFFER_SIZE];
 
 //Переменная для генерации веб страницы
-String webPage = "";
+String WebPage = "";
 
 //Функция чтения и обработки сообщений из топика
 void callback(char* topic, byte* payload, unsigned int length) 
@@ -80,9 +80,18 @@ void callback(char* topic, byte* payload, unsigned int length)
 //Функция движения серво
 void move_servo (int num, int deg)
 {
-  if (num<AMOUNT && deg<=MAXANGLE && deg>=0) //проверка корректности полученных значений
+  if (num<=AMOUNT && deg<=MAXANGLE && deg>=0) //проверка корректности полученных значений
   {
-  servos[num].setTargetDeg(deg);
+  if (num<AMOUNT)
+      {
+        servos[num].setTargetDeg(deg); //двигаем указанную серву
+      }
+  else 
+      {
+        for (byte i = 0; i < AMOUNT; i++) {
+            servos[i].setTargetDeg(deg);   // двигаем все сервы
+          }  
+      }
   }
   else
   {
@@ -90,6 +99,17 @@ void move_servo (int num, int deg)
     Serial.println(num);
     Serial.println(deg);
   }  
+}
+
+//функция обработчик команды веб серверу
+void handle_servomove()
+{
+int num=server.arg("servonum").toInt();
+int deg=server.arg("angle").toInt();
+  Serial.println(num);
+  Serial.println(deg);
+move_servo(num,deg);
+server.send(200, "text/plain", "OK");
 }
 
 void setup() {
@@ -116,42 +136,55 @@ void setup() {
   //Подключаемся к mqtt
   client.setServer(mqtt_server, mqtt_port);
   client.setCallback(callback);
-  webPage += "<h1>Dog Rx Machine</h1><p>AM Medicine  <a href=\"deliver\"><button>Deliver</button></a>&nbsp;<a href=\"reset\"><button>Reset</button></a></p>";
-  webPage += "<h2> </h1><p>PM Medicine  <a href=\"deliver\"><button>Deliver</button></a>&nbsp;<a href=\"reset\"><button>Reset</button></a></p>";
-  webPage += "<h3> </h1><p>Treat  <a href=\"deliver\"><button>Deliver</button></a>&nbsp;<a href=\"reset\"><button>Reset</button></a></p>";
-  webPage += "<h4> </h1><p>Kong Toy  <a href=\"deliver\"><button>Deliver</button></a>&nbsp;<a href=\"reset\"><button>Reset</button></a></p>";
+  //Генерация веб интерфейса
+  WebPage += "<!DOCTYPE html>";
+  WebPage += "<html lang='ru'>";
+  WebPage += "<head>";
+  WebPage += "<meta http-equiv='Content-type' content='text/html; charset=utf-8'>";
+  WebPage += "<title>Контроль серво</title>";
+  WebPage += "</head><body>";
+  WebPage += "<h1>Управление воздушными заслонками</h1>";
+  WebPage += "<form method='get' action='/servomove'>";
+  WebPage += "<select name=\"servo\">";
+  for (byte i = 0; i < AMOUNT; i++) 
+       {
+        WebPage +="<option value=\""+String(i)+"\">Клапан "+String(i)+"</option>";
+       }
+  WebPage += "<option value=\""+ String(AMOUNT)+"\">Все</option>";
+  WebPage += "</select><br>";
+  WebPage += "Угол<br>";
+  WebPage += "<input type='range' id='volume' name='angle' min='0' max='"+String (MAXANGLE)+"' /><br>";
+  WebPage += "<input type='button' value='Применить' onclick=\"location.href='/servomove?servonum='+servo.value+';angle='+angle.value\">";
+  WebPage += "</form>";
+  WebPage += "</body></html>";
    server.on("/", []() {
-    server.send(200, "text/html", webPage);
+    server.send(200, "text/html", WebPage);
    });
  
-   server.on("/deliver", []() {
-    server.send(200, "text/html", webPage);
-    Serial.println("HTTP OPEN COMMAND RECEIVED");
-  });
- 
-  server.on("/reset", []() {
-    server.send(200, "text/html", webPage);
-    Serial.println("HTTP CLOSE COMMAND RECEIVED");
-  });
+   server.on("/servomove", handle_servomove);
 
   server.begin();
   Serial.println("Server started");
-
+  Serial.println("Attaching servo...");
   //подключаем серво
-  servos[0].attach(3);
+  
+  servos[0].attach(D3);
   servos[0].smoothStart();
-  servos[1].attach(4);
+  servos[1].attach(D4);
   servos[1].smoothStart();
-  servos[2].attach(5);
-  servos[2].smoothStart();
-  servos[3].attach(6);
-  servos[3].smoothStart();
-
+  //servos[2].attach(5);
+  //servos[2].smoothStart();
+  //servos[3].attach(6);
+  //servos[3].smoothStart();
+  
+Serial.println("Servos Attached");
   //Настройки скорости и ускорений для каждого из серво
+Serial.println("Setting up servos...");
   for (byte i = 0; i < AMOUNT; i++) {
       servos[i].setSpeed(90);   // скорость градусов в секунду
-      servos[1].setAccel(0.2); //ускорение (от 0 до 1)
+      servos[1].setAccel(0.1); //ускорение (от 0 до 1)
     }
+Serial.println("All done!");    
 }
 
 void loop() {
@@ -164,10 +197,8 @@ void loop() {
       client.loop();//пинаем MQTT клиент
   
   // каждые 20 мс опрашиваем серво
-  if (millis() - servoTimer >= 20) {  // опрос серво каждые 20 мс
-    servoTimer += 20;
-    for (byte i = 0; i < AMOUNT; i++) {
-      servos[i].tickManual();   // двигаем все сервы при необходимости
+      for (byte i = 0; i < AMOUNT; i++) {
+      bool move=servos[i].tick();   // двигаем все сервы при необходимости
+      Serial.println(move);
     }
-}
 }
