@@ -13,8 +13,6 @@ ServoSmooth servos[AMOUNT]; // инициализируем библиотеку
 
 //переменные для таймеров
 uint32_t servoTimer;
-int position1 = 0;   // стартовая позиция
-int position2 = 90;  // конечная позиция
 
 //mqtt
 const char* mqtt_server = "192.168.1.1"; //ip или http адрес
