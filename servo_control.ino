@@ -96,9 +96,8 @@ void move_servo (int num, int val)
   {
     Serial.print("Incorrect values");
     Serial.println(num);
-    Serial.println(deg);
+    Serial.println(val);
   }
-    }  
 }
 
 //функция обработчик команды веб серверу
@@ -198,7 +197,6 @@ void loop() {
   
   // каждые 20 мс опрашиваем серво
       for (byte i = 0; i < AMOUNT; i++) {
-      bool move=servos[i].tick();   // двигаем все сервы при необходимости
-      Serial.println(move);
+      servos[i].tick();   // двигаем все сервы при необходимости
     }
 }
