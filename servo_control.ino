@@ -76,10 +76,11 @@ void callback(char* topic, byte* payload, unsigned int length)
 }
 
 //Функция движения серво
-void move_servo (int num, int deg)
+void move_servo (int num, int val)
 {
-  if (num<=AMOUNT && deg<=MAXANGLE && deg>=0) //проверка корректности полученных значений
+   if (num<=AMOUNT && val<=100 && val>=0) //проверка корректности полученных значений
   {
+  int deg=map(val,0,100,0,MAXANGLE);
   if (num<AMOUNT)
       {
         servos[num].setTargetDeg(deg); //двигаем указанную серву
@@ -96,7 +97,8 @@ void move_servo (int num, int deg)
     Serial.print("Incorrect values");
     Serial.println(num);
     Serial.println(deg);
-  }  
+  }
+    }  
 }
 
 //функция обработчик команды веб серверу
@@ -151,7 +153,7 @@ void setup() {
   WebPage += "<option value=\""+ String(AMOUNT)+"\">Все</option>";
   WebPage += "</select><br>";
   WebPage += "Угол<br>";
-  WebPage += "<input type='range' id='volume' name='angle' min='0' max='"+String (MAXANGLE)+"' /><br>";
+  WebPage += "<input type='range' id='volume' name='angle' min='0' max='100' /><br>";
   WebPage += "<input type='button' value='Применить' onclick=\"location.href='/servomove?servonum='+servo.value+';angle='+angle.value\">";
   WebPage += "</form>";
   WebPage += "</body></html>";
