@@ -61,11 +61,12 @@
 ![](/adds/code.png)
 ### Управление через виртуальное устройство
 Перейдите по адресу https://alexstar.ru/smarthome и создайте несколько новых правил MQTT для каждого из клапанов:
-![](/vdevice_on.png)
-![](/vdevice_off.png)
-![](/vdevice_percent.png)
+![](/adds/vdevice_on.png)
+![](/adds/vdevice_off.png)
+![](/adds/vdevice_percent.png)
 
 Далее перейдите по адресу https://alexstar.ru/smarthome/devices и создайте новое устройство типа Лампа со следующими параметрами:
 
-![](/vdevice_setting.png)
+![](/adds/vdevice_setting.png)
+Далее в устройствах умного дома на смартфоне кнопкой Включить/выключить открывать и закрывать задвижку, а установкой яркости менять ее положение
 
