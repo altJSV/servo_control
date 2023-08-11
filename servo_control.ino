@@ -1,24 +1,20 @@
 #include <ESP8266WiFi.h> //работа с wifi
 #include <ESP8266WebServer.h> //веб сервер
 #include <PubSubClient.h> //клиент mqtt
-#include <ServoSmooth.h> //работа с серво
+#include <Servo.h> //работа с серво
 //Логин- пароль wifi
-#define ssid  "Keenetic-8995" //точка доступа wifi
-#define password  "S1e9r8g5ey" //пароль wifi
-#define AMOUNT 2 //количество сервоприводов
+#define ssid  "ssid" //точка доступа wifi
+#define password  "pass" //пароль wifi
 #define MAXANGLE 90 //максимальный угол поворота
 #define MSG_BUFFER_SIZE (50) //размер буфера для сообщений mqtt
 
-ServoSmooth servos[AMOUNT]; // инициализируем библиотеку
-
-//переменные для таймеров
-uint32_t servoTimer;
+Servo servo; // инициализируем библиотеку
 
 //mqtt
 const char* mqtt_server = "192.168.1.1"; //ip или http адрес
 int mqtt_port = 1883; //порт
-const char* mqtt_login="redmond"; //логин
-const char* mqtt_pass="12345678"; //пароль
+const char* mqtt_login="login"; //логин
+const char* mqtt_pass="pass"; //пароль
 
 ESP8266WebServer server(80); //резервируем для вебсервера 80 порт
 WiFiClient espClient; //инициализируем wifi клиент
@@ -75,17 +71,16 @@ Serial.println(param);
 }
 
 //Функция движения серво
-void move_servo (int val)
+void move_servo (int deg)
 {
-   if (val<=100 && val>=0) //проверка корректности полученных значений
+   if (deg<=180 && deg>=0) //проверка корректности полученных значений
   {
-  int deg=map(val,0,100,0,MAXANGLE);
-     servos[0].setTargetDeg(deg); //двигаем указанную серву
+    servo.write(deg); //двигаем  серву
     }
   else
   {
-    Serial.println("Incorrect values");
-    Serial.println(val);
+    Serial.println("Incorrect value");
+    Serial.println(deg);
   }
 }
 
@@ -147,22 +142,9 @@ void setup() {
   Serial.println("Attaching servo...");
   //подключаем серво
   
-  servos[0].attach(D3);
-  servos[0].smoothStart();
-  servos[1].attach(D4);
-  servos[1].smoothStart();
-  //servos[2].attach(5);
-  //servos[2].smoothStart();
-  //servos[3].attach(6);
-  //servos[3].smoothStart();
+  servo.attach(D3,540,2400);
   
 Serial.println("Servos Attached");
-  //Настройки скорости и ускорений для каждого из серво
-Serial.println("Setting up servos...");
-  for (byte i = 0; i < AMOUNT; i++) {
-      servos[i].setSpeed(90);   // скорость градусов в секунду
-      servos[i].setAccel(0.1); //ускорение (от 0 до 1)
-    }
 Serial.println("All done!");    
 }
 
@@ -174,9 +156,4 @@ void loop() {
      reconnect();//Пробуем переподключится
   }
       client.loop();//пинаем MQTT клиент
-  
-  // каждые 20 мс опрашиваем серво
-      for (byte i = 0; i < AMOUNT; i++) {
-      servos[i].tick();   // двигаем все сервы при необходимости
-    }
 }
