@@ -3,8 +3,8 @@
 #include <PubSubClient.h> //клиент mqtt
 #include <ServoSmooth.h> //работа с серво
 //Логин- пароль wifi
-#define ssid  "ssid" //точка доступа wifi
-#define password  "pass" //пароль wifi
+#define ssid  "Keenetic-8995" //точка доступа wifi
+#define password  "S1e9r8g5ey" //пароль wifi
 #define AMOUNT 2 //количество сервоприводов
 #define MAXANGLE 90 //максимальный угол поворота
 #define MSG_BUFFER_SIZE (50) //размер буфера для сообщений mqtt
@@ -17,8 +17,8 @@ uint32_t servoTimer;
 //mqtt
 const char* mqtt_server = "192.168.1.1"; //ip или http адрес
 int mqtt_port = 1883; //порт
-const char* mqtt_login="login"; //логин
-const char* mqtt_pass="pass"; //пароль
+const char* mqtt_login="redmond"; //логин
+const char* mqtt_pass="12345678"; //пароль
 
 ESP8266WebServer server(80); //резервируем для вебсервера 80 порт
 WiFiClient espClient; //инициализируем wifi клиент
@@ -35,7 +35,7 @@ String WebPage = "";
 void callback(char* topic, byte* payload, unsigned int length) 
 {
  String message; //для хранения сообщения топика
- uint8_t param1, param2; //параметры серво
+ uint8_t param; //параметры серво
  Serial.print("Message arrived [");
  Serial.print(topic);
  Serial.print("] ");
@@ -43,10 +43,9 @@ void callback(char* topic, byte* payload, unsigned int length)
  message = message+(char)payload[i];
  }
  Serial.println(message);//общий вид сообщения "НомерСерво Угол"
-
- param1=message.substring(0,1).toInt();//Номер привода
- param2=message.substring(2).toInt();//угол поворота
- move_servo (param1, param2);
+ param=message.toInt();//угол поворота
+Serial.println(param);
+ move_servo (param);
 }
 
 //функция переподключения к mqtt
@@ -76,26 +75,16 @@ void callback(char* topic, byte* payload, unsigned int length)
 }
 
 //Функция движения серво
-void move_servo (int num, int val)
+void move_servo (int val)
 {
-   if (num<=AMOUNT && val<=100 && val>=0) //проверка корректности полученных значений
+   if (val<=100 && val>=0) //проверка корректности полученных значений
   {
   int deg=map(val,0,100,0,MAXANGLE);
-  if (num<AMOUNT)
-      {
-        servos[num].setTargetDeg(deg); //двигаем указанную серву
-      }
-  else 
-      {
-        for (byte i = 0; i < AMOUNT; i++) {
-            servos[i].setTargetDeg(deg);   // двигаем все сервы
-          }  
-      }
-  }
+     servos[0].setTargetDeg(deg); //двигаем указанную серву
+    }
   else
   {
-    Serial.print("Incorrect values");
-    Serial.println(num);
+    Serial.println("Incorrect values");
     Serial.println(val);
   }
 }
@@ -103,11 +92,9 @@ void move_servo (int num, int val)
 //функция обработчик команды веб серверу
 void handle_servomove()
 {
-int num=server.arg("servonum").toInt();
 int deg=server.arg("angle").toInt();
-  Serial.println(num);
   Serial.println(deg);
-move_servo(num,deg);
+move_servo(deg);
 server.send(200, "text/plain", "OK");
 }
 
@@ -144,16 +131,9 @@ void setup() {
   WebPage += "</head><body>";
   WebPage += "<h1>Управление воздушными заслонками</h1>";
   WebPage += "<form method='get' action='/servomove'>";
-  WebPage += "<select name=\"servo\">";
-  for (byte i = 0; i < AMOUNT; i++) 
-       {
-        WebPage +="<option value=\""+String(i)+"\">Клапан "+String(i)+"</option>";
-       }
-  WebPage += "<option value=\""+ String(AMOUNT)+"\">Все</option>";
-  WebPage += "</select><br>";
   WebPage += "Угол<br>";
   WebPage += "<input type='range' id='volume' name='angle' min='0' max='100' /><br>";
-  WebPage += "<input type='button' value='Применить' onclick=\"location.href='/servomove?servonum='+servo.value+';angle='+angle.value\">";
+  WebPage += "<input type='button' value='Применить' onclick=\"location.href='/servomove?angle='+angle.value\">";
   WebPage += "</form>";
   WebPage += "</body></html>";
    server.on("/", []() {
@@ -181,7 +161,7 @@ Serial.println("Servos Attached");
 Serial.println("Setting up servos...");
   for (byte i = 0; i < AMOUNT; i++) {
       servos[i].setSpeed(90);   // скорость градусов в секунду
-      servos[1].setAccel(0.1); //ускорение (от 0 до 1)
+      servos[i].setAccel(0.1); //ускорение (от 0 до 1)
     }
 Serial.println("All done!");    
 }
