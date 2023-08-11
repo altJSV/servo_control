@@ -9,6 +9,7 @@
 #define MSG_BUFFER_SIZE (50) //размер буфера для сообщений mqtt
 
 Servo servo; // инициализируем библиотеку
+int8_t speed; //скорость движения
 
 //mqtt
 const char* mqtt_server = "192.168.1.1"; //ip или http адрес
@@ -73,9 +74,22 @@ Serial.println(param);
 //Функция движения серво
 void move_servo (int deg)
 {
-   if (deg<=180 && deg>=0) //проверка корректности полученных значений
+   int cur_pos=servo.read();
+     if (deg<=180 && deg>=0) //проверка корректности полученных значений
   {
-    servo.write(deg); //двигаем  серву
+    if (cur_pos<deg)
+      {
+    for (int pos = cur_pos; pos <= deg; pos += speed) 
+        {     servo.write(pos);              
+              delay(15);                      
+        }
+      }
+    else
+      {
+      for (int pos = cur_pos; pos >= deg; pos -= speed) 
+            servo.write(pos);
+            delay(15);
+      }                       
     }
   else
   {
