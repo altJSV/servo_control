@@ -9,7 +9,7 @@
 #define MSG_BUFFER_SIZE (50) //размер буфера для сообщений mqtt
 
 Servo servo; // инициализируем библиотеку
-int8_t speed; //скорость движения
+int8_t speed=1; //скорость движения
 
 //mqtt
 const char* mqtt_server = "192.168.1.1"; //ip или http адрес
