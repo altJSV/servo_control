@@ -181,7 +181,7 @@ Serial.println("Servos Attached");
 Serial.println("Setting up servos...");
   for (byte i = 0; i < AMOUNT; i++) {
       servos[i].setSpeed(90);   // скорость градусов в секунду
-      servos[1].setAccel(0.1); //ускорение (от 0 до 1)
+      servos[i].setAccel(0.1); //ускорение (от 0 до 1)
     }
 Serial.println("All done!");    
 }
