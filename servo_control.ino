@@ -5,7 +5,6 @@
 //Логин- пароль wifi
 #define ssid  "ssid" //точка доступа wifi
 #define password  "pass" //пароль wifi
-#define MAXANGLE 90 //максимальный угол поворота
 #define MSG_BUFFER_SIZE (50) //размер буфера для сообщений mqtt
 
 Servo servo; // инициализируем библиотеку
@@ -141,7 +140,7 @@ void setup() {
   WebPage += "<h1>Управление воздушными заслонками</h1>";
   WebPage += "<form method='get' action='/servomove'>";
   WebPage += "Угол<br>";
-  WebPage += "<input type='range' id='volume' name='angle' min='0' max='100' /><br>";
+  WebPage += "<input type='range' id='volume' name='angle' min='0' max='180' /><br>";
   WebPage += "<input type='button' value='Применить' onclick=\"location.href='/servomove?angle='+angle.value\">";
   WebPage += "</form>";
   WebPage += "</body></html>";
